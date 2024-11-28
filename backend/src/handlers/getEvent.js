@@ -2,7 +2,7 @@ const { getDbPool } = require('../utils/database');
 
 exports.handler = async (event) => {
   try {
-    const pool = await getDbPool(); // Get database pool for querying
+    const pool = await getDbPool(); // Get database pool for querying and return whatever specified in the query
     
     // Check if the event ID or other filters are provided in the query
     const { eventId, latitude, longitude, maxResults = 10, page = 1 } = event.queryStringParameters;
