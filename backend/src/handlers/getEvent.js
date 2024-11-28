@@ -6,7 +6,8 @@ exports.handler = async (event) => {
     
     // Extract query parameters for location
     const { latitude, longitude } = event.queryStringParameters;
-    
+
+    // Error if no latitude, longtitude are provided
     if (!latitude || !longitude) {
       return {
         statusCode: 400,
