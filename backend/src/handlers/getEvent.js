@@ -15,7 +15,7 @@ exports.handler = async (event) => {
       };
     }
 
-    // Query to return events within the radoius of the user
+    // Defining a Query to return events within the radoius of the user
     const query = `
       SELECT id, title, description, event_date, location_name, latitude, longitude, max_participants
       FROM events
@@ -26,7 +26,7 @@ exports.handler = async (event) => {
       )
       ORDER BY event_date ASC
     `;
-
+    // Creates an array for all langtitude and longtitude to be replaced in the placeholders
     const queryParams = [longitude, latitude];
     // Executes the query
     const result = await pool.query(query, queryParams);
