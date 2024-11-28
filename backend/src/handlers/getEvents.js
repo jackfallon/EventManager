@@ -1,6 +1,29 @@
 const { getDbPool } = require('../utils/database');
+const jwt = require('jsonwebtoken');
 
 exports.handler = async (event) => {
+  try {
+    // Extract the JWT token from the Authorization header
+    const token = event.headers.Authorization ? event.headers.Authorization.split(' ')[1] : null;
+
+    if (!token) {
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ message: 'Unauthorized: No token provided' })
+      };
+    }
+
+    // Verify the token (you'll need to replace 'YOUR_COGNITO_PUBLIC_KEY' with your actual Cognito public key URL)
+    const decoded = jwt.verify(token, 'YOUR_COGNITO_PUBLIC_KEY', (err, decoded) => {
+      if (err) {
+        return {
+          statusCode: 401,
+          body: JSON.stringify({ message: 'Unauthorized: Invalid token' })
+        };
+      }
+      return decoded;
+    });
+    
   try {
     const pool = await getDbPool(); 
     
