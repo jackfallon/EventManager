@@ -28,7 +28,7 @@ exports.handler = async (event) => {
     `;
 
     const queryParams = [longitude, latitude];
-
+    // Executes the query
     const result = await pool.query(query, queryParams);
 
     // If no events are found
