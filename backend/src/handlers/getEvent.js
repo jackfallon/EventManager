@@ -1,47 +1,40 @@
-const { getDbPool } = require('../utils/database'); 
+const { getDbPool } = require('../utils/database');
 
 exports.handler = async (event) => {
   try {
-    const pool = await getDbPool(); // Get database pool for querying and return whatever specified in the query
+    const pool = await getDbPool(); 
     
-    // Check if the event ID or other filters are provided in the query
-    const { eventId, latitude, longitude, maxResults = 10, page = 1 } = event.queryStringParameters;
-
-    // Calculate offset for pagination (if needed)
-    const offset = (page - 1) * maxResults;
-
-    let query = `SELECT id, title, description, event_date, location_name, latitude, longitude, max_participants
-                 FROM events
-                 WHERE 1=1`; // Default condition to add additional filters
+    // Extract query parameters for location
+    const { latitude, longitude } = event.queryStringParameters;
     
-    let queryParams = [];
-    
-    if (eventId) {
-      query += ` AND id = $1`;
-      queryParams.push(eventId); // Add eventId as query parameter
+    if (!latitude || !longitude) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ message: 'Latitude and Longitude are required' })
+      };
     }
 
-    if (latitude && longitude) {
-      query += ` AND ST_DWithin(
-                   ST_SetSRID(ST_MakePoint(longitude, latitude), 4326),
-                   ST_SetSRID(ST_MakePoint($2, $3), 4326),
-                   notification_radius
-                 )`;
-      queryParams.push(longitude, latitude); // Add location filters if present
-    }
+    // 
+    const query = `
+      SELECT id, title, description, event_date, location_name, latitude, longitude, max_participants
+      FROM events
+      WHERE ST_DWithin(
+        ST_SetSRID(ST_MakePoint(longitude, latitude), 4326),
+        ST_SetSRID(ST_MakePoint($1, $2), 4326),
+        notification_radius
+      )
+      ORDER BY event_date ASC
+    `;
 
-    query += ` ORDER BY event_date ASC
-               LIMIT $4 OFFSET $5`; // Pagination parameters
-    queryParams.push(maxResults, offset); // Add pagination parameters
+    const queryParams = [longitude, latitude];
 
-    // Query to fetch events based on provided parameters
     const result = await pool.query(query, queryParams);
-    
+
     // If no events are found
     if (result.rows.length === 0) {
       return {
         statusCode: 404,
-        body: JSON.stringify({ message: 'No events found.' })
+        body: JSON.stringify({ message: 'No events found near your location.' })
       };
     }
 
