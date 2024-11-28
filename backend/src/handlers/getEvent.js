@@ -15,7 +15,7 @@ exports.handler = async (event) => {
       };
     }
 
-    // Query to return events specified by the co-ordinates from the user
+    // Query to return events within the radoius of the user
     const query = `
       SELECT id, title, description, event_date, location_name, latitude, longitude, max_participants
       FROM events
