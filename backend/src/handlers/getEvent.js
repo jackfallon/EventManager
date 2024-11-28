@@ -1,4 +1,4 @@
-const { getDbPool } = require('../utils/database'); // Assuming you have a database utility for connecting to DB
+const { getDbPool } = require('../utils/database'); 
 
 exports.handler = async (event) => {
   try {
