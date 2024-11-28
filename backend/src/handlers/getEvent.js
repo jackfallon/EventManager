@@ -20,7 +20,7 @@ exports.handler = async (event) => {
       SELECT id, title, description, event_date, location_name, latitude, longitude, max_participants
       FROM events
       WHERE ST_DWithin(
-        ST_SetSRID(ST_MakePoint(longitude, latitude), 4326), // Event location
+        ST_SetSRID(ST_MakePoint(longitude, latitude), 4326), // furthest area where events with lower co-ors should be returned
         ST_SetSRID(ST_MakePoint($1, $2), 4326),              // User location
         notification_radius
       )
