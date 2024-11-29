@@ -6,6 +6,7 @@ const axios = require('axios');
 const jwkToPem = require('jwk-to-pem');
 
 async function getCognitoPoolId() {
+  const ssm = new AWS.SSM();
   const params = {
     Name: '/event-management/user-pool-id', // The name of the SSM parameter
     WithDecryption: true
@@ -14,6 +15,18 @@ async function getCognitoPoolId() {
   return response.Parameter.Value;
 }
 const COGNITO_REGION = 'us-east-1'; 
+// Helper function to verify JWT token
+async function verifyToken(token, COGNITO_POOL_ID) {
+  const url = `https://cognito-idp.${COGNITO_REGION}.amazonaws.com/${COGNITO_POOL_ID}/.well-known/jwks.json`;
+  const { data } = await axios.get(url);
+  const decodedToken = jwt.decode(token, { complete: true });
+  const key = data.keys.find(key => key.kid === decodedToken.header.kid);
+  
+  if (!key) throw new Error('Public key not found');
+  
+  const pem = jwkToPem(key);
+  return jwt.verify(token, pem);
+}
 
 exports.handler = async (event) => {
   try {
@@ -69,15 +82,4 @@ exports.handler = async (event) => {
   }
 };
 
-// Helper function to verify JWT token
-async function verifyToken(token) {
-  const url = `https://cognito-idp.${COGNITO_REGION}.amazonaws.com/${COGNITO_POOL_ID}/.well-known/jwks.json`;
-  const { data } = await axios.get(url);
-  const decodedToken = jwt.decode(token, { complete: true });
-  const key = data.keys.find(key => key.kid === decodedToken.header.kid);
-  
-  if (!key) throw new Error('Public key not found');
-  
-  const pem = jwkToPem(key);
-  return jwt.verify(token, pem);
-}
+
