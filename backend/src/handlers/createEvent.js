@@ -10,7 +10,6 @@ const COGNITO_REGION = 'COGNITO_REGION'; // replace with region
 
 exports.handler = async (event) => {
   try {
-    //Extract and verify the token
     const token = event.headers.Authorization || event.headers.authorization;
     if (!token) {
       return { statusCode: 401, body: JSON.stringify({ message: 'Authorization token required' }) };
@@ -21,7 +20,6 @@ exports.handler = async (event) => {
     // Parse event data from the request body
     const { title, description, eventDate, locationName, latitude, longitude, maxParticipants } = JSON.parse(event.body);
 
-    // Insert event into database
     const pool = await getDbPool();
     const result = await pool.query(
       `INSERT INTO events (title, description, event_date, location_name, latitude, longitude, created_by, max_participants) 
@@ -31,7 +29,6 @@ exports.handler = async (event) => {
 
     const newEvent = result.rows[0];
 
-    // Find nearby users (simplified)
     const nearbyUsers = await pool.query(
       `SELECT id, cognito_id FROM users 
        WHERE ST_DWithin(ST_SetSRID(ST_MakePoint(longitude, latitude), 4326), 
