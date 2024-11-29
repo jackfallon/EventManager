@@ -1,6 +1,6 @@
 const { getDbPool } = require('../utils/database');
 const jwt = require('jsonwebtoken');
-
+const COGNITO_REGION = 'us-east-1';
 exports.handler = async (event) => {
   try {
     // Extract the JWT token from the Authorization header
@@ -12,7 +12,7 @@ exports.handler = async (event) => {
         body: JSON.stringify({ message: 'Unauthorized: No token provided' })
       };
     }
-   // We need to rplace cognito_pub_key with url
+    const url = `https://cognito-idp.${COGNITO_REGION}.amazonaws.com/${COGNITO_POOL_ID}/.well-known/jwks.json`;
     const decoded = jwt.verify(token, 'COGNITO_PUBLIC_KEY', (err, decoded) => {
       if (err) {
         return {
