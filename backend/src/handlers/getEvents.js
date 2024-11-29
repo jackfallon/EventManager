@@ -12,6 +12,7 @@ async function getCognitoPoolId() {
 
 exports.handler = async (event) => {
   try {
+    const COGNITO_POOL_ID = await getCognitoPoolId();
     // Extract the JWT token from the Authorization header
     const token = event.headers.Authorization ? event.headers.Authorization.split(' ')[1] : null;
 
