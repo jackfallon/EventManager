@@ -1,6 +1,15 @@
 const { getDbPool } = require('../utils/database');
 const jwt = require('jsonwebtoken');
 const COGNITO_REGION = 'us-east-1';
+async function getCognitoPoolId() {
+  const params = {
+    Name: '/event-management/user-pool-id', // The name of the SSM parameter
+    WithDecryption: true
+  };
+  const response = await ssm.getParameter(params).promise();
+  return response.Parameter.Value;
+}
+
 exports.handler = async (event) => {
   try {
     // Extract the JWT token from the Authorization header
