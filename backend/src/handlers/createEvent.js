@@ -5,17 +5,27 @@ const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const jwkToPem = require('jwk-to-pem');
 
-const COGNITO_POOL_ID = 'COGNITO_POOL_ID'; // replace with pool ID
-const COGNITO_REGION = 'COGNITO_REGION'; // replace with region
+async function getCognitoPoolId() {
+  const params = {
+    Name: '/event-management/user-pool-id', // The name of the SSM parameter
+    WithDecryption: true
+  };
+  const response = await ssm.getParameter(params).promise();
+  return response.Parameter.Value;
+}
+const COGNITO_REGION = 'us-east-1'; 
 
 exports.handler = async (event) => {
   try {
+    // Calling function to retrieve cognito user pool id
+    const COGNITO_POOL_ID = await getCognitoPoolId();
+    
     const token = event.headers.Authorization || event.headers.authorization;
     if (!token) {
       return { statusCode: 401, body: JSON.stringify({ message: 'Authorization token required' }) };
     }
 
-    const user = await verifyToken(token); // Verify JWT token
+    const user = await verifyToken(token, COGNITO_POOL_ID); 
 
     // Parse event data from the request body
     const { title, description, eventDate, locationName, latitude, longitude, maxParticipants } = JSON.parse(event.body);
