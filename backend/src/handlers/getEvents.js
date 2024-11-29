@@ -4,8 +4,10 @@ const AWS = require('aws-sdk'); // Initialize AWS SDK
 const axios = require('axios');
 const ssm = new AWS.SSM(); // Initialize SSM client
 const COGNITO_REGION = 'us-east-1';
+const jwkToPem = require('jwk-to-pem');
 
 async function getCognitoPoolId() {
+  const ssm = new AWS.SSM();
   const params = {
     Name: '/event-management/user-pool-id', // The name of the SSM parameter
     WithDecryption: true
@@ -13,10 +15,18 @@ async function getCognitoPoolId() {
   const response = await ssm.getParameter(params).promise();
   return response.Parameter.Value;
 }
-async function getCognitoPublicKey(poolId) {
-  const url = `https://cognito-idp.${COGNITO_REGION}.amazonaws.com/${poolId}/.well-known/jwks.json`;
-  const response = await axios.get(url);
-  return response.data.keys;
+
+// Helper function to verify JWT token
+async function verifyToken(token, COGNITO_POOL_ID) {
+  const url = `https://cognito-idp.${COGNITO_REGION}.amazonaws.com/${COGNITO_POOL_ID}/.well-known/jwks.json`;
+  const { data } = await axios.get(url);
+  const decodedToken = jwt.decode(token, { complete: true });
+  const key = data.keys.find(key => key.kid === decodedToken.header.kid);
+  
+  if (!key) throw new Error('Public key not found');
+  
+  const pem = jwkToPem(key);
+  return jwt.verify(token, pem);
 }
 exports.handler = async (event) => {
   try {
