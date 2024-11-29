@@ -7,7 +7,6 @@ const COGNITO_REGION = 'us-east-1';
 const jwkToPem = require('jwk-to-pem');
 
 async function getCognitoPoolId() {
-  const ssm = new AWS.SSM();
   const params = {
     Name: '/event-management/user-pool-id', // The name of the SSM parameter
     WithDecryption: true
