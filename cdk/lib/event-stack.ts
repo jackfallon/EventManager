@@ -11,6 +11,7 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
 
 export class EventManagementStack extends cdk.Stack {
@@ -78,6 +79,13 @@ export class EventManagementStack extends cdk.Stack {
         userSrp: true,
       },
     });
+
+    // ssm to store the cognito user pool id during deployment 
+    new ssm.StringParameter(this, 'CognitoUserPoolId', {
+    parameterName: '/event-management/user-pool-id',
+    stringValue: userPool.userPoolId, // Store the Cognito User Pool ID
+    });
+
 
     // SNS Topic
     const eventTopic = new sns.Topic(this, 'EventNotificationTopic');
