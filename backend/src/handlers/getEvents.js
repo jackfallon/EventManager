@@ -30,23 +30,14 @@ async function verifyToken(token, COGNITO_POOL_ID) {
 }
 exports.handler = async (event) => {
   try {
-     const COGNITO_POOL_ID = await getCognitoPoolId();
-    const { Authorization } = event.headers;
-    const token = Authorization ? Authorization.split(' ')[1] : null;
+    const COGNITO_POOL_ID = await getCognitoPoolId();
+    
+    const token = event.headers.Authorization || event.headers.authorization;
+    if (!token) {
+      return { statusCode: 401, body: JSON.stringify({ message: 'Authorization token required' }) };
+    }
 
-    if (!token) return { statusCode: 401, body: JSON.stringify({ message: 'Unauthorized: No token provided' }) };
-
-    const decodedToken = jwt.decode(token, { complete: true });
-    if (!decodedToken?.header?.kid) return { statusCode: 401, body: JSON.stringify({ message: 'Unauthorized: Invalid token header' }) };
-
-    const { data: { keys } } = await axios.get(`https://cognito-idp.${COGNITO_REGION}.amazonaws.com/${COGNITO_POOL_ID}/.well-known/jwks.json`);
-    const key = keys.find(k => k.kid === decodedToken.header.kid);
-    if (!key) return { statusCode: 401, body: JSON.stringify({ message: 'Unauthorized: Key not found' }) };
-
-    const publicKey = jwt.constructPublicKey(key);
-    jwt.verify(token, publicKey, (err, decoded) => {
-      if (err) return { statusCode: 401, body: JSON.stringify({ message: 'Unauthorized: Invalid token' }) };
-    });
+    const user = await verifyToken(token, COGNITO_POOL_ID); 
 
     
     const pool = await getDbPool(); 
