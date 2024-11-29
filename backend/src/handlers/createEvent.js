@@ -9,13 +9,15 @@ exports.handler = async (event) => {
     const { title, description, eventDate, locationName, latitude, longitude, maxParticipants } = JSON.parse(event.body);
     const userId = event.requestContext.authorizer.claims.sub;
 
+    const distance = calculateDistance(userLatitude, userLongitude, latitude, longitude);
+    
     // Create event
     const result = await pool.query(
       `INSERT INTO events (
         title, description, event_date, location_name, latitude, longitude,
-        created_by, max_participants
+        created_by, max_participants, distance_from_user
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-      [title, description, eventDate, locationName, latitude, longitude, userId, maxParticipants]
+      [title, description, eventDate, locationName, latitude, longitude, userId, maxParticipants, distance]
     );
 
     const newEvent = result.rows[0];
@@ -50,7 +52,7 @@ exports.handler = async (event) => {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
       },
-      body: JSON.stringify(newEvent)
+      body: JSON.stringify({ event: newEvent, distance })
     };
   } catch (error) {
     console.error('Error:', error);
