@@ -12,9 +12,8 @@ exports.handler = async (event) => {
         body: JSON.stringify({ message: 'Unauthorized: No token provided' })
       };
     }
-
-    // Verify the token (you'll need to replace 'YOUR_COGNITO_PUBLIC_KEY' with your actual Cognito public key URL)
-    const decoded = jwt.verify(token, 'YOUR_COGNITO_PUBLIC_KEY', (err, decoded) => {
+   // We need to rplace cognito_pub_key with url
+    const decoded = jwt.verify(token, 'COGNITO_PUBLIC_KEY', (err, decoded) => {
       if (err) {
         return {
           statusCode: 401,
