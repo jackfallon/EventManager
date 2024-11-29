@@ -131,16 +131,6 @@ export class EventManagementStack extends cdk.Stack {
       },
     });
 
-    const locationFunction = new lambda.Function(this, 'locationFunction', {
-      runtime: lambda.Runtime.NODEJS_18_X,
-      handler: 'location.handler',
-      code: lambda.Code.fromAsset('backend/src/handlers'),
-      vpc,
-      layers: [sharedLayer],
-      role: lambdaRole,
-      environment: {}
-    });
-
     // API Gateway
     const api = new apigateway.RestApi(this, 'EventApi', {
       restApiName: 'Event Service',
