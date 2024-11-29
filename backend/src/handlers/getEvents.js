@@ -1,6 +1,10 @@
 const { getDbPool } = require('../utils/database');
 const jwt = require('jsonwebtoken');
+const AWS = require('aws-sdk'); // Initialize AWS SDK
+const axios = require('axios');
+const ssm = new AWS.SSM(); // Initialize SSM client
 const COGNITO_REGION = 'us-east-1';
+
 async function getCognitoPoolId() {
   const params = {
     Name: '/event-management/user-pool-id', // The name of the SSM parameter
@@ -9,31 +13,32 @@ async function getCognitoPoolId() {
   const response = await ssm.getParameter(params).promise();
   return response.Parameter.Value;
 }
-
+async function getCognitoPublicKey(poolId) {
+  const url = `https://cognito-idp.${COGNITO_REGION}.amazonaws.com/${poolId}/.well-known/jwks.json`;
+  const response = await axios.get(url);
+  return response.data.keys;
+}
 exports.handler = async (event) => {
   try {
-    const COGNITO_POOL_ID = await getCognitoPoolId();
-    // Extract the JWT token from the Authorization header
-    const token = event.headers.Authorization ? event.headers.Authorization.split(' ')[1] : null;
+     const COGNITO_POOL_ID = await getCognitoPoolId();
+    const { Authorization } = event.headers;
+    const token = Authorization ? Authorization.split(' ')[1] : null;
 
-    if (!token) {
-      return {
-        statusCode: 401,
-        body: JSON.stringify({ message: 'Unauthorized: No token provided' })
-      };
-    }
-    const url = `https://cognito-idp.${COGNITO_REGION}.amazonaws.com/${COGNITO_POOL_ID}/.well-known/jwks.json`;
-    const decoded = jwt.verify(token, 'COGNITO_PUBLIC_KEY', (err, decoded) => {
-      if (err) {
-        return {
-          statusCode: 401,
-          body: JSON.stringify({ message: 'Unauthorized: Invalid token' })
-        };
-      }
-      return decoded;
+    if (!token) return { statusCode: 401, body: JSON.stringify({ message: 'Unauthorized: No token provided' }) };
+
+    const decodedToken = jwt.decode(token, { complete: true });
+    if (!decodedToken?.header?.kid) return { statusCode: 401, body: JSON.stringify({ message: 'Unauthorized: Invalid token header' }) };
+
+    const { data: { keys } } = await axios.get(`https://cognito-idp.${COGNITO_REGION}.amazonaws.com/${COGNITO_POOL_ID}/.well-known/jwks.json`);
+    const key = keys.find(k => k.kid === decodedToken.header.kid);
+    if (!key) return { statusCode: 401, body: JSON.stringify({ message: 'Unauthorized: Key not found' }) };
+
+    const publicKey = jwt.constructPublicKey(key);
+    jwt.verify(token, publicKey, (err, decoded) => {
+      if (err) return { statusCode: 401, body: JSON.stringify({ message: 'Unauthorized: Invalid token' }) };
     });
+
     
-  try {
     const pool = await getDbPool(); 
     
     // Extract query parameters for location
