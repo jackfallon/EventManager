@@ -131,6 +131,18 @@ export class EventManagementStack extends cdk.Stack {
       },
     });
 
+    const getCalenderFunction = new lambda.Function(this, 'GetEventsFunction', {
+      runtime: lambda.Runtime.NODEJS_18_X,
+      handler: 'getCalender.handler',
+      code: lambda.Code.fromAsset('backend/src/handlers'),
+      vpc,
+      layers: [sharedLayer],
+      role: lambdaRole,
+      environment: {
+        DB_SECRET_ARN: database.secret?.secretArn || '',
+      },
+    });
+
     // API Gateway
     const api = new apigateway.RestApi(this, 'EventApi', {
       restApiName: 'Event Service',
