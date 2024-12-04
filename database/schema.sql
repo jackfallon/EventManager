@@ -31,6 +31,10 @@ CREATE TABLE events (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+ALTER TABLE events 
+DROP COLUMN latitude,
+DROP COLUMN longitude;
+
 -- Event participants table
 CREATE TABLE event_participants (
     event_id UUID REFERENCES events(id),
